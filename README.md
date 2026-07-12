@@ -1,12 +1,3 @@
----
-title: AudioShield AI
-emoji: 🛡️
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
----
 
 <div align="center">
 
@@ -33,9 +24,14 @@ pinned: false
 
 <br>
 
-<div align="center">
-<img src="assets/hero-landing.png" alt="AudioShield AI landing page" width="100%">
-</div>
+
+## 🎬Demo
+  
+
+https://github.com/user-attachments/assets/94c9fae6-26f1-4515-ad30-1f7b50497e81
+
+
+
 
 ---
 
