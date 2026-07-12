@@ -84,17 +84,39 @@ class DeepfakeDetector(nn.Module):
 
 detector_model = None
 
+def resolve_lfs_file(file_path: str, repo_filename: str):
+    """Download actual file from Hub if local copy is an LFS pointer."""
+    if os.path.exists(file_path) and os.path.getsize(file_path) < 1000:
+        print(f"Detected LFS pointer: {repo_filename}. Downloading from Hub...")
+        from huggingface_hub import hf_hub_download
+        import shutil
+        downloaded = hf_hub_download(repo_id="Hardik-25/audioshield", filename=repo_filename, repo_type="space")
+        shutil.copy(downloaded, file_path)
+        print(f"Downloaded {repo_filename}.")
+
+
+def resolve_all_lfs_audio():
+    """Download all audio samples if they are LFS pointers."""
+    audio_dir = ROOT / "static" / "samples"
+    if not audio_dir.exists():
+        return
+    for root, dirs, files in os.walk(audio_dir):
+        for fname in files:
+            if fname.endswith(".wav"):
+                fpath = os.path.join(root, fname)
+                if os.path.getsize(fpath) < 1000:
+                    # repo-relative path
+                    rel = os.path.relpath(fpath, ROOT).replace("\\", "/")
+                    resolve_lfs_file(fpath, rel)
+
+
 @app.on_event("startup")
 def load_model():
     global detector_model
     
-    if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) < 1000:
-        print("Detected LFS pointer file instead of actual weights. Downloading from Hub...")
-        from huggingface_hub import hf_hub_download
-        import shutil
-        downloaded_path = hf_hub_download(repo_id="Hardik-25/audioshield", filename="deployment_model.pt", repo_type="space")
-        shutil.copy(downloaded_path, MODEL_PATH)
-        print("Download complete.")
+    resolve_all_lfs_audio()
+    
+    resolve_lfs_file(MODEL_PATH, "deployment_model.pt")
         
     print(f"Loading checkpoint from {MODEL_PATH} on device {DEVICE}...")
     detector_model = DeepfakeDetector()
