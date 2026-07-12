@@ -12,4 +12,5 @@ RUN ls -lh deployment_model.pt
 
 EXPOSE 7860
 
+# Rebuild trigger: updated static frontend with GitHub nav link, removed View Demo & Launch buttons
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
