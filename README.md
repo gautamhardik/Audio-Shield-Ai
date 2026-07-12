@@ -6,7 +6,7 @@
 
 ### Enterprise-Grade Deepfake Audio Detection & Forensic Analysis Platform
 
-**Detect synthetic voices with 99.89% accuracy using self-supervised speech representations, temporal sequence modeling, and attention-based forensic reasoning.**
+**Detect synthetic voices with 99.11% accuracy using self-supervised speech representations, temporal sequence modeling, and attention-based forensic reasoning.**
 
 [![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
@@ -15,6 +15,8 @@
 [![React](https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![HF Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-orange)](https://hardik-25-audioshield.hf.space/)
+[![Accuracy](https://img.shields.io/badge/Accuracy-99.11%25-cyan)](https://hardik-25-audioshield.hf.space/)
+[![AUC](https://img.shields.io/badge/AUC-0.9994-blue)](https://hardik-25-audioshield.hf.space/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **[🚀 Live Demo](https://hardik-25-audioshield.hf.space/)** · **[📊 Performance](#-diagnostic-performance-metrics)** · **[🏗️ Architecture](#️-system-architecture)**
@@ -158,21 +160,21 @@ The goal was to build something closer to a real security tool than a portfolio 
 
 ## 📊 Dataset
 
-Trained and evaluated on the **Fake-or-Real (FoR) Audio Dataset** — **69,316** total samples, nearly perfectly balanced between classes.
+Trained and evaluated on a **combined dataset** merging **Fake-or-Real (FoR)** and **ASVspoof 2019 LA** — **162,374** total samples.
 
-| Split | Real | Fake | Total |
-|---|---:|---:|---:|
-| Training | 26,941 | 26,941 | 53,882 |
-| Validation | 5,400 | 5,400 | 10,800 |
-| Testing | 2,264 | 2,370 | 4,634 |
+| Dataset | Samples |
+|---|---:|
+| ASVspoof 2019 LA | 121,461 |
+| Fake-or-Real (FoR) | 40,913 |
+| **Combined Total** | **162,374** |
 
-```
-training/    → fake/  real/
-validation/  → fake/  real/
-testing/     → fake/  real/
-```
+| Split | Samples |
+|---:|---:|
+| Training | 55,584 |
+| Validation | 30,919 |
+| Testing | 75,871 |
 
-Balanced classes mean **accuracy, precision, recall, and F1 are all meaningful** — not artifacts of class imbalance.
+The test set (75,871 samples) combines 71,237 ASVspoof + 4,634 FoR samples, providing a rigorous held-out evaluation across diverse attack types and recording conditions.
 
 ---
 
@@ -207,29 +209,27 @@ Raw Audio → WavLM Processor → Transformer Encoder → Contextual Embeddings 
 - **Scheduler:** Cosine with linear warmup (10% warmup steps)
 - **Batch Size:** 32
 - **Max Audio Length:** 6 seconds (96,000 samples at 16kHz)
-- **Epochs:** 15 with early stopping (patience=1, based on AUC improvement)
+- **Epochs:** 7 (early stopping based on AUC improvement)
 - **Mixed Precision:** FP16 via GradScaler
 - **Freeze Strategy:** WavLM frozen for first 2 epochs, then unfrozen for fine-tuning
 - **Output:** `deployment_model.pt` — the exact artifact served in production
 
-Developed entirely in **Kaggle Notebooks** to leverage free GPU access and avoid downloading ~70,000 audio files locally — the dataset is hosted natively on Kaggle, making this the fastest reproducible environment for this project.
+The combined dataset was assembled by merging FoR and ASVspoof 2019 LA, then splitting into train/validation/test sets. Training was performed on Kaggle with GPU acceleration.
 
 ---
 
 ## 📈 Diagnostic Performance Metrics
 
-*Independently validated on held-out test data.*
+*Evaluated on the combined held-out test set (75,871 samples: 71,237 ASVspoof + 4,634 FoR).*
 
-<div align="center">
-
-| Metric | Score |
-|---|---:|
-| **Accuracy** | 99.89% |
-| **Precision** | 99.83% |
-| **Recall** | 99.96% |
-| **F1 Score** | 99.89% |
-| **ROC-AUC** | 0.9999 |
-| **Equal Error Rate (EER)** | 0.11% |
+| Metric | Overall | Real (Bonafide) | Spoof (Fake) |
+|---|---:|---:|---:|
+| **Accuracy** | **99.11%** | — | — |
+| **Precision** | — | 94.14% | 99.87% |
+| **Recall** | — | 99.12% | 99.10% |
+| **F1 Score** | — | 96.57% | 99.49% |
+| **ROC-AUC** | **0.9994** | — | — |
+| **Equal Error Rate (EER)** | **0.89%** | — | — |
 
 </div>
 
@@ -239,69 +239,47 @@ Developed entirely in **Kaggle Notebooks** to leverage free GPU access and avoid
 
 High numbers invite skepticism — rightfully so. Here's why this isn't overfitting:
 
-- **No data leakage** — predefined train/validation/test splits were strictly respected; test data was never seen during training or model selection.
-- **Balanced dataset** — near-equal class representation means accuracy, precision, recall, and F1 all reflect true performance, not class-imbalance artifacts.
-- **Large training set** — 53,882 labeled samples reduce memorization risk and support generalization.
+- **No data leakage** — splits were created before training; test data was never seen during training or model selection.
+- **Large, diverse test set** — 75,871 held-out samples spanning two independent datasets with different attack types ensures robust evaluation.
+- **Large training set** — 55,584 labeled samples reduce memorization risk and support generalization.
 - **Transfer learning, not memorization** — performance is driven primarily by WavLM's pretrained representations, not example-level memorization.
 - **Consistent validation/test alignment** — closely matched performance across splits indicates genuine generalization rather than overfitting to validation.
 
 ---
 
-## 📊 Cross-Dataset Generalization Evaluation
+## 📊 Combined Dataset Evaluation
 
-To rigorously test generalization beyond the training distribution, the model (trained **exclusively** on Fake-or-Real) was evaluated on the **ASVspoof 2019 LA** benchmark — a completely independent dataset with different spoofing attacks, recording conditions, and protocol. **No fine-tuning or weight updates were performed.**
+The model was trained on a combined dataset merging **Fake-or-Real (FoR)** and **ASVspoof 2019 LA**, then evaluated on a held-out test set from the same combined distribution.
 
 ### Evaluation Methodology
 
 | Component | Detail |
 |---|---|
-| **Training Dataset** | Fake-or-Real (FoR) — 69,316 samples |
-| **External Dataset** | ASVspoof 2019 LA — Logical Access (Evaluation Split) |
-| **Model Status** | Frozen — loaded from `deployment_model.pt`, pure inference |
-| **Preprocessing** | Identical pipeline: 16kHz resample, mono, head truncation to 6s, WavLM feature extraction |
-| **Evaluation Type** | Cross-dataset generalization (out-of-distribution) |
+| **Training Datasets** | FoR + ASVspoof 2019 LA (combined) |
+| **Total Samples** | 162,374 (55,584 train / 30,919 val / 75,871 test) |
+| **Model Checkpoint** | `deployment_model.pt` — best epoch by validation AUC |
+| **Preprocessing** | 16kHz resample, mono, head truncation to 6s, WavLM feature extraction |
+| **Evaluation Type** | In-distribution held-out test |
 
-### Metrics
+### Per-Class Metrics
 
-| Metric | ASVspoof 2019 LA * | FoR Test (Reference) |
-|---|---:|---:|
-| **Accuracy** | 61.50% | 99.89% |
-| **Precision** | 98.82% | 99.83% |
-| **Recall** | 57.03% | 99.96% |
-| **F1 Score** | 72.32% | 99.89% |
-| **ROC-AUC** | 0.8648 | 0.9999 |
-| **EER** | 19.92% | 0.11% |
+| Class | Precision | Recall | F1-Score | Support |
+|---|---:|---:|---:|---:|
+| **Real (Bonafide)** | 94.14% | 99.12% | 96.57% | 9,619 |
+| **Spoof (Fake)** | 99.87% | 99.10% | 99.49% | 66,252 |
+| **Overall Accuracy** | **99.11%** | | | **75,871** |
 
-> *\* Results on 2,000 samples from ASVspoof 2019 LA evaluation split. Full 71,237-sample evaluation requires GPU.*
-
-> **Note:** This is a cross-dataset generalization test — the model was trained **exclusively** on Fake-or-Real with **no fine-tuning** on ASVspoof. The model detects bonafide speech well (only 5.1% false positives) but misses many unseen spoof attacks (43% false negatives), particularly neural vocoder-based attacks (A17-A19: >88% error rate). See the [full report](cross_dataset_evaluation/GENERALIZATION_REPORT.md) for detailed analysis.
+The model achieves near-perfect spoof detection (99.87% precision, 99.10% recall) with a slight trade-off in real-class precision (94.14%), meaning it occasionally flags real audio as suspicious — a conservative bias that favors security over false negatives.
 
 ### How to Reproduce
 
 ```bash
 cd cross_dataset_evaluation
-python download_asvspoof.py          # Download dataset
-python run_inference.py              # Run inference
-python compute_metrics.py            # Compute metrics + visualizations
-python error_analysis.py             # Error analysis
-python generalization_report.py      # Generate report
+python run_inference_for.py          # Run FoR inference
+python compute_metrics_for.py        # Compute metrics + visualizations
 ```
 
-Or run the full pipeline:
-
-```bash
-python cross_dataset_evaluation/run_all.py
-```
-
-### What This Tests
-
-Cross-dataset evaluation is substantially harder than in-distribution testing because ASVspoof contains:
-
-- **Unknown spoofing attacks** — different generation algorithms not seen during training
-- **Different recording environments** — varied acoustic conditions and codecs
-- **No speaker overlap** — disjoint speaker sets
-
-A strong result demonstrates genuine robustness. A moderate drop is expected and honestly reported.
+See the [`model evaluation`](model%20evaluation/) directory for full metrics, confusion matrix, ROC/PR curves, and score distributions.
 
 ---
 
@@ -436,9 +414,9 @@ The production app runs as a **Docker Space** on Hugging Face, bundling the Reac
 
 ---
 
-## 🤝 Cross-Dataset Generalization
+## 🔬 Model Evaluation
 
-All cross-dataset evaluation code, results, and the full methodology report are available in the [`cross_dataset_evaluation/`](cross_dataset_evaluation/) directory. The evaluation is designed to be reproducible and scientifically honest — see [`GENERALIZATION_REPORT.md`](cross_dataset_evaluation/GENERALIZATION_REPORT.md) for the complete analysis.
+All evaluation code, results, metrics, and visualizations are available in the [`cross_dataset_evaluation/`](cross_dataset_evaluation/) and [`model evaluation`](model%20evaluation/) directories.
 
 ---
 
