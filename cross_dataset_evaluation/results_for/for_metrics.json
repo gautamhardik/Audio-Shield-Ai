@@ -1,0 +1,17 @@
+{
+  "evaluation_type": "in-distribution_test",
+  "dataset": "Fake-or-Real (FoR) - Test Split",
+  "total_samples": 4634,
+  "real_count": 2264,
+  "fake_count": 2370,
+  "correct_predictions": 4619,
+  "incorrect_predictions": 15,
+  "accuracy": 0.9967630556754424,
+  "accuracy_pct": 99.67630556754425,
+  "precision": 0.9995757318625371,
+  "recall": 0.9940928270042194,
+  "f1_score": 0.996826740004231,
+  "roc_auc": 0.9999882587109182,
+  "eer": 0.00265017667844523,
+  "eer_threshold": 0.0261914171278476
+}
