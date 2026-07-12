@@ -278,7 +278,7 @@ The model achieves near-perfect spoof detection (99.87% precision, 99.10% recall
 ### How to Reproduce
 
 ```bash
-cd cross_dataset_evaluation
+cd combined_dataset_evaluation
 python run_inference_for.py          # Run FoR inference
 python compute_metrics_for.py        # Compute metrics + visualizations
 ```
@@ -325,7 +325,7 @@ One-click downloadable forensic PDF report — audio summary, key findings, and 
 ```
 Audio-Shield-AI/
 │
-├── cross_dataset_evaluation/       # Cross-dataset generalization evaluation
+├── combined_dataset_evaluation/   # In-distribution evaluation on combined dataset
 │   ├── download_asvspoof.py       # ASVspoof 2019 LA download script
 │   ├── run_inference.py           # Pure inference on ASVspoof
 │   ├── compute_metrics.py         # Metrics + visualizations
@@ -420,7 +420,7 @@ The production app runs as a **Docker Space** on Hugging Face, bundling the Reac
 
 ## 🔬 Model Evaluation
 
-All evaluation code, results, metrics, and visualizations are available in the [`cross_dataset_evaluation/`](cross_dataset_evaluation/) and [`model evaluation`](model%20evaluation/) directories.
+All evaluation code, results, metrics, and visualizations are available in the [`combined_dataset_evaluation/`](combined_dataset_evaluation/) and [`model evaluation`](model%20evaluation/) directories.
 
 ---
 
